@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sleek Personal Finance Dashboard 1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/phosphor-icons"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="p-4 sm:p-6 lg:p-10">
+
+    <div class="max-w-7xl mx-auto">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-extrabold text-gray-800">Sleek Personal Finance Dashboard</h1>
+            <p class="text-gray-500 mt-1">Your comprehensive tool for tracking income, expenses, and debts.</p>
+        </header>
+
+        <div class="header-section grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+            <div class="text-center p-3 sm:p-4 rounded-xl bg-white bg-opacity-15 backdrop-blur-sm">
+                <i class="ph-wallet text-2xl mb-1"></i>
+                <p class="text-xs opacity-80 font-medium">Net Worth</p>
+                <p id="totalBalanceDisplay" class="text-2xl font-extrabold mt-1">₹ 0.00</p>
+            </div>
+            <div class="text-center p-3 sm:p-4 rounded-xl bg-white bg-opacity-15 backdrop-blur-sm">
+                <i class="ph-money text-2xl mb-1"></i>
+                <p class="text-xs opacity-80 font-medium">Cash Balance</p>
+                <p id="cashBalanceDisplay" class="text-2xl font-extrabold mt-1 text-teal-200">₹ 0.00</p>
+            </div>
+            <div class="text-center p-3 sm:p-4 rounded-xl bg-white bg-opacity-15 backdrop-blur-sm">
+                <i class="ph-bank text-2xl mb-1"></i>
+                <p class="text-xs opacity-80 font-medium">Bank Balance</p>
+                <p id="bankBalanceDisplay" class="text-2xl font-extrabold mt-1 text-indigo-200">₹ 0.00</p>
+            </div>
+            <div class="text-center p-3 sm:p-4 rounded-xl bg-white bg-opacity-15 backdrop-blur-sm">
+                <i class="ph-chart-line-down text-2xl mb-1"></i>
+                <p class="text-xs opacity-80 font-medium">Total Expenses</p>
+                <p id="totalExpenseDisplay" class="text-2xl font-extrabold mt-1 text-rose-200">₹ 0.00</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:col-span-3 gap-6">
+
+            <div class="lg:col-span-1 space-y-6">
+
+                <div id="balanceUpdateCard" class="card p-6">
+                    <h2 class="text-xl font-bold mb-4 flex items-center text-gray-700">
+                        <i class="ph-gear-six text-indigo-500 mr-2"></i> Initial Setup
+                    </h2>
+                    <form id="balanceUpdateForm" class="space-y-4">
+                        <div>
+                            <label for="initialCash" class="block text-sm font-medium text-gray-700">Cash Balance (Hard Cash)</label>
+                            <input type="number" id="initialCash" placeholder="Initial Cash Amount" required>
+                        </div>
+                        <div>
+                            <label for="initialBank" class="block text-sm font-medium text-gray-700">Bank Account Balance</label>
+                            <input type="number" id="initialBank" placeholder="Initial Bank Balance" required>
+                        </div>
+                        <button type="submit" class="w-full bg-indigo-600 text-white py-2.5 rounded-xl hover:bg-indigo-700 font-semibold shadow-md shadow-indigo-200">Set Balances</button>
+                    </form>
+                </div>
+
+                <div id="incomeCard" class="card p-6">
+                    <h2 class="text-xl font-bold mb-4 flex items-center text-gray-700">
+                        <i class="ph-arrow-circle-down text-teal-500 mr-2"></i> Add Income
+                    </h2>
+                    <form id="incomeForm" class="space-y-4">
+                        <div><input type="number" id="incomeAmount" placeholder="Amount (₹)" required></div>
+                        <div><input type="date" id="incomeDate" value="" required></div>
+                        <div>
+                            <label for="incomeSourceType" class="block text-sm font-medium text-gray-700">Income Medium</label>
+                            <select id="incomeSourceType" required>
+                                <option value="cash">Cash Received</option>
+                                <option value="bank">Bank/UPI Received</option>
+                            </select>
+                        </div>
+                        <div><input type="text" id="incomeSource" placeholder="Source (e.g., Salary, Gift)" required></div>
+                        <div><input type="text" id="incomeRemark" placeholder="Brief Description" required></div>
+                        <button type="submit" class="w-full bg-teal-600 text-white py-2.5 rounded-xl hover:bg-teal-700 font-semibold shadow-md shadow-teal-200">Record Income</button>
+                    </form>
+                </div>
+
+                <div id="expenseCard" class="card p-6">
+                    <h2 class="text-xl font-bold mb-4 flex items-center text-gray-700">
+                        <i class="ph-arrow-circle-up text-rose-500 mr-2"></i> Add Expense
+                    </h2>
+                    <form id="expenseForm" class="space-y-4">
+                        <div><input type="number" id="expenseAmount" placeholder="Amount (₹)" required></div>
+                        <div><input type="date" id="expenseDate" value="" required></div>
+                        <div>
+                            <select id="expenseCategory" required>
+                                <option value="" disabled selected>Select Category</option>
+                                <option value="Food & Drink">Food & Drink</option>
+                                <option value="Grocery">Grocery</option> <option value="Transport">Transport</option>
+                                <option value="Bills & Rent">Bills & Rent</option>
+                                <option value="Shopping">Shopping</option>
+                                <option value="Entertainment">Entertainment</option>
+                                <option value="Health">Health & Fitness</option>
+                                <option value="Academic & Study">Academic & Study</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div><input type="text" id="expenseLocation" placeholder="Location/Vendor" required></div>
+                        <div><input type="text" id="expenseRemark" placeholder="What was the expense for?" required></div>
+                        <div>
+                            <label for="expenseSourceType" class="block text-sm font-medium text-gray-700">Payment Medium</label>
+                            <select id="expenseSourceType" required>
+                                <option value="cash">Cash Payment</option>
+                                <option value="bank">Bank/UPI Payment</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full bg-rose-600 text-white py-2.5 rounded-xl hover:bg-rose-700 font-semibold shadow-md shadow-rose-200">Record Expense</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 space-y-6">
+
+                <div id="chartCard" class="card p-6">
+                    <h2 class="text-xl font-bold mb-4 flex items-center text-gray-700">
+                        <i class="ph-chart-pie-slice text-indigo-500 mr-2"></i> Expense Category Analysis
+                    </h2>
+                    <div class="h-80 w-full flex items-center justify-center">
+                         <canvas id="expensePieChart"></canvas>
+                         <p id="noChartData" class="text-gray-500 hidden">No expense data available.</p>
+                    </div>
+                </div>
+
+                 <div id="debtTrackerCard" class="card p-6">
+                    <h2 class="text-xl font-bold mb-4 flex items-center text-gray-700">
+                         <i class="ph-handshake text-yellow-600 mr-2"></i> Debt Management
+                    </h2>
+                    <div class="grid grid-cols-2 gap-4 mb-5">
+                        <div class="p-3 bg-rose-50 rounded-xl text-center border border-rose-200">
+                            <p class="text-xs text-gray-600 font-medium">My Debts (Payable)</p>
+                            <p id="totalBorrowedDisplay" class="text-2xl font-bold text-rose-600 mt-1">₹ 0.00</p>
+                        </div>
+                        <div class="p-3 bg-teal-50 rounded-xl text-center border border-teal-200">
+                            <p class="text-xs text-gray-600 font-medium">Money Owed to Me (Receivable)</p>
+                            <p id="totalLentDisplay" class="text-2xl font-bold text-teal-600 mt-1">₹ 0.00</p>
+                        </div>
+                    </div>
+
+                    <form id="debtForm" class="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-5 p-4 bg-gray-50 rounded-lg">
+                        <div class="col-span-full">
+                            <select id="debtType" required>
+                                <option value="lent">I Lent Money (Receivable)</option>
+                                <option value="borrowed">I Borrowed Money (Payable)</option>
+                            </select>
+                        </div>
+                        <div class="col-span-2"><input type="number" id="debtAmount" placeholder="Amount (₹)" required></div>
+                        <div class="col-span-2"><input type="date" id="debtDate" value="" required></div>
+                        <div class="col-span-full"><input type="text" id="debtName" placeholder="Person's Name" required></div>
+                        <div class="col-span-full"><input type="text" id="debtRemark" placeholder="Reason for Debt" required></div>
+                        <button type="submit" class="col-span-full bg-yellow-600 text-white py-2.5 rounded-xl hover:bg-yellow-700 font-semibold shadow-md shadow-yellow-200">Add Debt Record</button>
+                    </form>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                        <div>
+                            <h3 class="text-md font-bold text-teal-600 border-b-2 border-teal-100 pb-1 mb-3 flex items-center"><i class="ph-arrow-down-right-bold mr-1"></i> Receivables (Owed to Me)</h3>
+                            <div id="lentList" class="space-y-3">
+                                </div>
+                        </div>
+                        <div>
+                            <h3 class="text-md font-bold text-rose-600 border-b-2 border-rose-100 pb-1 mb-3 flex items-center"><i class="ph-arrow-up-left-bold mr-1"></i> Payables (My Debt)</h3>
+                            <div id="borrowedList" class="space-y-3">
+                                </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div id="incomeHistoryCard" class="card p-6">
+                        <h2 class="text-xl font-bold mb-4 flex items-center text-gray-700"><i class="ph-currency-inr text-teal-500 mr-2"></i> Income History</h2>
+                        <div id="incomeList" class="space-y-2 max-h-96 overflow-y-auto pr-2">
+                            </div>
+                    </div>
+                    <div id="expenseHistoryCard" class="card p-6">
+                        <h2 class="text-xl font-bold mb-4 flex items-center text-gray-700"><i class="ph-bag-simple text-rose-500 mr-2"></i> Expense History</h2>
+                        <div id="expenseList" class="space-y-2 max-h-96 overflow-y-auto pr-2">
+                            </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <footer class="mt-12 py-6 border-t border-gray-200 text-center">
+            <p class="text-sm text-gray-600 max-w-2xl mx-auto">
+                This web app is <strong>intentionally simple</strong> and designed for <strong>user privacy</strong>. All financial data is stored exclusively in your device's local storage; <strong>no external database</strong> is used.
+            </p>
+            <p class="mt-2 text-sm font-semibold text-indigo-700">
+                Developed with <span class="text-red-500">&hearts;</span> by Shubham Jana. <br> Developer Contact: <a href="mailto:devshubhamjana@gmail.com" class="text-indigo-900 hover:text-indigo-600 underline">devshubhamjana@gmail.com</a>
+            </p>
+        </footer>
+
+    </div>
+
+    <div id="modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center p-4 z-50 transition-opacity duration-300">
+        <div class="bg-white p-7 rounded-2xl shadow-2xl max-w-sm w-full transform scale-95 transition-transform duration-300">
+            <h3 id="modalTitle" class="text-xl font-bold mb-2 text-gray-800 flex items-center"><i class="ph-check-circle-fill text-blue-500 mr-2"></i> Repayment</h3>
+            <p id="modalMessage" class="mb-5 text-gray-600"></p>
+            <div id="modalContent" class="space-y-3">
+                </div>
+            <div class="mt-7 flex justify-end space-x-3">
+                <button id="modalCancel" class="px-5 py-2 text-gray-700 bg-gray-200 rounded-xl hover:bg-gray-300 font-medium">Cancel</button>
+                <button id="modalConfirm" class="px-5 py-2 text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 font-medium shadow-md shadow-indigo-200">Confirm Action</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="snackbar-container" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 z-50 space-y-2">
+        </div>
+
+    <script src="finance.js"></script>
+
+</body>
+</html>

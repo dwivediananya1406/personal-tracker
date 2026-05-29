@@ -594,6 +594,352 @@ const showTemporaryMessage = (message, type) => {
 };
 
 
+
+// --- AI Features Implementation ---
+const BACKEND_URL = 'http://localhost:3000';
+
+// Handle Quick Add form submission
+document.getElementById('aiQuickAddForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const inputField = document.getElementById('aiQuickAddInput');
+    const text = inputField.value.trim();
+    if (!text) return;
+
+    // Toggle loading UI states
+    const submitBtn = document.getElementById('aiQuickAddSubmitBtn');
+    const icon = document.getElementById('aiQuickAddIcon');
+    const spinner = document.getElementById('aiQuickAddSpinner');
+
+    submitBtn.disabled = true;
+    icon.classList.add('hidden');
+    spinner.classList.remove('hidden');
+
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/parse-transaction`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                text,
+                currentDate: new Date().toISOString().split('T')[0]
+            })
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || 'Server error. Make sure your server is running.');
+        }
+
+        const data = await response.json();
+        
+        // Let's add the transaction to state
+        addAIParsedTransaction(data);
+        inputField.value = ''; // clear input on success
+
+    } catch (error) {
+        console.error('Quick Add AI Error:', error);
+        showTemporaryMessage(error.message, 'error');
+    } finally {
+        submitBtn.disabled = false;
+        icon.classList.remove('hidden');
+        spinner.classList.add('hidden');
+    }
+});
+
+// Map AI parsed transaction to local storage state
+const addAIParsedTransaction = (data) => {
+    const amount = parseFloat(data.amount);
+    if (isNaN(amount) || amount <= 0) {
+        showTemporaryMessage("AI parsed an invalid transaction amount.", "error");
+        return;
+    }
+
+    const id = generateId();
+    const date = data.date || new Date().toISOString().split('T')[0];
+    const sourceType = data.sourceType === 'bank' ? 'bank' : 'cash';
+    const remark = data.remark || 'AI Recorded Transaction';
+    const location = data.location || 'Unknown';
+
+    if (data.transactionType === 'income') {
+        const source = data.location || 'AI Source';
+        const newIncome = { id, amount, date, source, remark, sourceType };
+        state.incomes.push(newIncome);
+
+        if (sourceType === 'cash') state.cashBalance += amount;
+        else state.bankBalance += amount;
+
+        showTemporaryMessage(`Income of ${formatCurrency(amount)} added to ${sourceType === 'cash' ? 'Cash' : 'Bank'}.`, "success");
+    } 
+    else if (data.transactionType === 'expense') {
+        const category = data.category || 'Other';
+        
+        // Validate balance before proceeding
+        if (sourceType === 'cash' && amount > state.cashBalance) {
+            showTemporaryMessage(`Insufficient Cash Balance! (Need ${formatCurrency(amount)}, have ${formatCurrency(state.cashBalance)})`, "error");
+            return;
+        }
+        if (sourceType === 'bank' && amount > state.bankBalance) {
+            showTemporaryMessage(`Insufficient Bank Balance! (Need ${formatCurrency(amount)}, have ${formatCurrency(state.bankBalance)})`, "error");
+            return;
+        }
+
+        const newExpense = { id, amount, date, category, location, remark, sourceType };
+        state.expenses.push(newExpense);
+
+        if (sourceType === 'cash') state.cashBalance -= amount;
+        else state.bankBalance -= amount;
+
+        showTemporaryMessage(`Expense of ${formatCurrency(amount)} deducted from ${sourceType === 'cash' ? 'Cash' : 'Bank/UPI'}.`, "success");
+    }
+    else if (data.transactionType === 'lent') {
+        const name = data.name || 'Someone';
+        if (amount > state.cashBalance) {
+            showTemporaryMessage(`Insufficient Cash to lend ${formatCurrency(amount)}!`, "error");
+            return;
+        }
+        const newDebt = { id, amount, date, name, remark, status: 'outstanding' };
+        state.cashBalance -= amount;
+        state.lent.push(newDebt);
+
+        showTemporaryMessage(`₹ ${formatCurrency(amount)} lent to ${name}. Cash deducted.`, "success");
+    }
+    else if (data.transactionType === 'borrowed') {
+        const name = data.name || 'Someone';
+        const newDebt = { id, amount, date, name, remark, status: 'outstanding' };
+        state.cashBalance += amount;
+        state.borrowed.push(newDebt);
+
+        showTemporaryMessage(`₹ ${formatCurrency(amount)} borrowed from ${name}. Cash added.`, "success");
+    } else {
+        showTemporaryMessage("AI returned unknown transaction type.", "error");
+        return;
+    }
+
+    // Apply safe rounding to balances
+    state.cashBalance = parseFloat(state.cashBalance.toFixed(2));
+    state.bankBalance = parseFloat(state.bankBalance.toFixed(2));
+
+    saveState();
+};
+
+// AI Chat State
+let chatHistory = [];
+
+// Drawer Toggle Logic
+const aiChatDrawer = document.getElementById('aiChatDrawer');
+const aiChatOverlay = document.getElementById('aiChatOverlay');
+const aiChatOpenBtn = document.getElementById('aiChatOpenBtn');
+const aiChatCloseBtn = document.getElementById('aiChatCloseBtn');
+
+const openChatDrawer = () => {
+    aiChatDrawer.classList.add('drawer-open');
+    aiChatOverlay.classList.remove('hidden');
+    // Periodically check server on open
+    checkServerStatus();
+};
+
+const closeChatDrawer = () => {
+    aiChatDrawer.classList.remove('drawer-open');
+    aiChatOverlay.classList.add('hidden');
+};
+
+aiChatOpenBtn.addEventListener('click', openChatDrawer);
+aiChatCloseBtn.addEventListener('click', closeChatDrawer);
+aiChatOverlay.addEventListener('click', closeChatDrawer);
+
+// Server status checking
+const checkServerStatus = async () => {
+    const banner = document.getElementById('aiServerStatusBanner');
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/health`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.apiConfigured) {
+                banner.classList.add('hidden');
+            } else {
+                banner.classList.remove('hidden');
+                banner.querySelector('span').innerHTML = '<i class="ph-warning-circle-fill text-sm mr-1.5"></i> Gemini API Key is missing in server .env!';
+            }
+        } else {
+            banner.classList.remove('hidden');
+            banner.querySelector('span').innerHTML = '<i class="ph-warning-circle-fill text-sm mr-1.5"></i> AI Server unreachable on port 3000!';
+        }
+    } catch (e) {
+        banner.classList.remove('hidden');
+        banner.querySelector('span').innerHTML = '<i class="ph-warning-circle-fill text-sm mr-1.5"></i> AI Server unreachable on port 3000!';
+    }
+};
+
+document.getElementById('aiServerRetryBtn').addEventListener('click', checkServerStatus);
+
+// Chat submission logic
+document.getElementById('aiChatForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = document.getElementById('aiChatInput');
+    const message = input.value.trim();
+    if (!message) return;
+
+    input.value = '';
+    await sendChatMessage(message);
+});
+
+// Render user and advisor messages in the DOM
+const appendMessage = (sender, text) => {
+    const messagesContainer = document.getElementById('aiChatMessages');
+    const isUser = sender === 'user';
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `flex items-start space-x-3 ${isUser ? 'justify-end space-x-reverse' : ''}`;
+    
+    const icon = isUser 
+        ? `<div class="w-8 h-8 rounded-xl bg-indigo-100 border border-indigo-200 flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
+             <i class="ph-user-fill text-indigo-600 text-sm"></i>
+           </div>`
+        : `<div class="w-8 h-8 rounded-xl bg-indigo-100 border border-indigo-200 flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
+             <i class="ph-sparkle text-indigo-600 text-sm"></i>
+           </div>`;
+
+    const bubbleBg = isUser 
+        ? 'bg-indigo-600 text-white rounded-tr-none' 
+        : 'bg-white text-gray-700 border border-gray-100 rounded-tl-none';
+
+    const senderName = isUser ? 'You' : 'FinAI';
+    const senderColor = isUser ? 'text-indigo-200' : 'text-indigo-600';
+
+    // Simple markdown formatting for bold and lists
+    const formattedText = formatMarkdown(text);
+
+    messageDiv.innerHTML = `
+        ${icon}
+        <div class="max-w-[80%] ${bubbleBg} p-3.5 rounded-2xl shadow-sm">
+            <p class="text-[10px] font-bold ${senderColor} mb-1">${senderName}</p>
+            <div class="text-xs leading-relaxed chat-markdown space-y-1">${formattedText}</div>
+        </div>
+    `;
+
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+};
+
+// Help format basic markdown elements to HTML
+const formatMarkdown = (text) => {
+    let html = text;
+    
+    // Escaping HTML characters to prevent XSS
+    html = html
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+    // Replace bold text **bold** -> <strong>bold</strong>
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+    // Replace bullet lists
+    // Note: Since text can have linebreaks, let's process lines
+    const lines = html.split('\n');
+    let inList = false;
+    let inNumList = false;
+    
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i].trim();
+        if (line.startsWith('* ') || line.startsWith('- ')) {
+            if (!inList) {
+                lines[i] = '<ul class="list-disc pl-4 space-y-1">' + `<li>${line.substring(2)}</li>`;
+                inList = true;
+            } else {
+                lines[i] = `<li>${line.substring(2)}</li>`;
+            }
+        } else if (/^\d+\.\s/.test(line)) {
+            const content = line.replace(/^\d+\.\s/, '');
+            if (!inNumList) {
+                lines[i] = '<ol class="list-decimal pl-4 space-y-1">' + `<li>${content}</li>`;
+                inNumList = true;
+            } else {
+                lines[i] = `<li>${content}</li>`;
+            }
+        } else {
+            if (inList) {
+                lines[i-1] += '</ul>';
+                inList = false;
+            }
+            if (inNumList) {
+                lines[i-1] += '</ol>';
+                inNumList = false;
+            }
+            // Put in <p> tag if it is not empty
+            if (line) {
+                lines[i] = `<p>${line}</p>`;
+            }
+        }
+    }
+    
+    if (inList) {
+        lines[lines.length-1] += '</ul>';
+    }
+    if (inNumList) {
+        lines[lines.length-1] += '</ol>';
+    }
+
+    return lines.join('\n');
+};
+
+// Action to send message to backend
+const sendChatMessage = async (text) => {
+    appendMessage('user', text);
+    
+    // Setup loader inside chat drawer submit
+    const sendBtn = document.getElementById('aiChatSendBtn');
+    const sendIcon = document.getElementById('aiChatSendIcon');
+    const sendSpinner = document.getElementById('aiChatSendSpinner');
+
+    sendBtn.disabled = true;
+    sendIcon.classList.add('hidden');
+    sendSpinner.classList.remove('hidden');
+
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/chat-advisor`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message: text,
+                history: chatHistory,
+                financeState: state
+            })
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || 'Server error.');
+        }
+
+        const data = await response.json();
+        
+        // Add to history
+        chatHistory.push({ role: 'user', text });
+        chatHistory.push({ role: 'assistant', text: data.text });
+        
+        appendMessage('assistant', data.text);
+
+    } catch (e) {
+        console.error('Chat AI Error:', e);
+        appendMessage('assistant', 'Error: Failed to process request. Make sure your local AI server is active.');
+    } finally {
+        sendBtn.disabled = false;
+        sendIcon.classList.remove('hidden');
+        sendSpinner.classList.add('hidden');
+    }
+};
+
+// Event listeners for suggestion pills
+const handlePillClick = async (promptText) => {
+    openChatDrawer();
+    await sendChatMessage(promptText);
+};
+
+document.getElementById('pillHealth').addEventListener('click', () => handlePillClick('Give me a high-level summary of my financial health, noting if my cash vs bank balance ratio is good.'));
+document.getElementById('pillSpend').addEventListener('click', () => handlePillClick('Analyze my spending by category, tell me which is the highest, and provide 3 tips to reduce spending there.'));
+document.getElementById('pillDebts').addEventListener('click', () => handlePillClick('Summarize my debts: who owes me money and who do I owe? What is my net debt position?'));
+
+
 // --- Initialization ---
 const init = () => {
     loadState();

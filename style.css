@@ -58,3 +58,45 @@ button:active {
 html, body {
     overflow-x: hidden;
 }
+
+/* AI Chat Drawer Transitions and Utilities */
+#aiChatDrawer {
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#aiChatDrawer.drawer-open {
+    transform: translateX(0) !important;
+}
+
+/* Hide scrollbar utility for suggestion pills */
+.scrollbar-none::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-none {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+/* Markdown and chat bubble styling */
+.chat-markdown p {
+    margin-bottom: 0.5rem;
+}
+.chat-markdown p:last-child {
+    margin-bottom: 0;
+}
+.chat-markdown ul {
+    margin-left: 1.25rem;
+    margin-bottom: 0.5rem;
+    list-style-type: disc;
+}
+.chat-markdown ol {
+    margin-left: 1.25rem;
+    margin-bottom: 0.5rem;
+    list-style-type: decimal;
+}
+.chat-markdown li {
+    margin-bottom: 0.25rem;
+}
+.chat-markdown strong {
+    font-weight: 700;
+}

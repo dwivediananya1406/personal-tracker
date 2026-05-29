@@ -2,7 +2,6 @@
   "name": "personal-finance-tracker",
   "version": "1.0.0",
   "description": "Sleek Personal Finance Dashboard with Server-Side AI integration",
-  "main": "server.js",
   "scripts": {
     "local-start": "node server.js",
     "dev": "node server.js"

@@ -32,7 +32,6 @@ input, select {
     padding: 0.65rem 1rem;
     width: 100%;
     background-color: #0f172a;
-    color: #f8fafc; /* Add light text color */
     transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 

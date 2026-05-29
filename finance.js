@@ -596,7 +596,10 @@ const showTemporaryMessage = (message, type) => {
 
 
 // --- AI Features Implementation ---
-const BACKEND_URL = 'http://localhost:3000';
+// Auto-detect backend: use Vercel in production, localhost in dev
+const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:3000'
+    : 'https://personal-finanace-tracker.vercel.app';
 
 // Handle Quick Add form submission
 document.getElementById('aiQuickAddForm').addEventListener('submit', async (e) => {

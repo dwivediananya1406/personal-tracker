@@ -63,4 +63,4 @@ If you wish to run or modify the code locally:
 
 Developed with ❤️ by Shubham Jana.
 
-**Developer Contact:** [devshubhamjana@gmail.com](mailto:devshubhamjana@gmail.com)
+**Developer Contact:** [dwivediananya1406@gmail.com](dwivediananya1406@gmail.com)

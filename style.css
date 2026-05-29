@@ -2,12 +2,12 @@
 
 body {
     font-family: 'Inter', sans-serif;
-    background-color: #0f172a; /* Light gray-blue background */
-    color: #f8fafc;
+    background-color: #f3f4f6; /* Light gray background */
+    color: #1f2937; /* Dark gray text */
 }
 
 .card {
-    background-color: #1e293b;
+    background-color: #ffffff; /* White card */
     border-radius: 1rem; /* More rounded corners */
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
     transition: transform 0.3s ease;
@@ -28,10 +28,11 @@ body {
 
 input, select {
     border-radius: 0.5rem;
-    border: 2px solid #334155;
+    border: 2px solid #cbd5e1; /* slate-300 */
     padding: 0.65rem 1rem;
     width: 100%;
-    background-color: #0f172a;
+    background-color: #ffffff; /* White */
+    color: #1f2937;
     transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 

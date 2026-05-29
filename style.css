@@ -2,12 +2,12 @@
 
 body {
     font-family: 'Inter', sans-serif;
-    background-color: #f0f4f8; /* Light gray-blue background */
-    color: #1f2937;
+    background-color: #0f172a; /* Light gray-blue background */
+    color: #f8fafc;
 }
 
 .card {
-    background-color: white;
+    background-color: #1e293b;
     border-radius: 1rem; /* More rounded corners */
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
     transition: transform 0.3s ease;
@@ -19,7 +19,7 @@ body {
 
 .header-section {
     background: linear-gradient(105deg, #4f46e5 0%, #10b981 100%); /* Indigo to Teal gradient */
-    color: white;
+    color: #f8fafc;
     padding: 2rem 1.5rem;
     border-radius: 1rem;
     margin-bottom: 2rem;
@@ -28,10 +28,11 @@ body {
 
 input, select {
     border-radius: 0.5rem;
-    border: 2px solid #e5e7eb;
+    border: 2px solid #334155;
     padding: 0.65rem 1rem;
     width: 100%;
-    background-color: #f9fafb;
+    background-color: #0f172a;
+    color: #f8fafc; /* Add light text color */
     transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 

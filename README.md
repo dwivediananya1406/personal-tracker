@@ -1,6 +1,6 @@
 # Sleek Personal Finance Dashboard 💰
 
-**Live Demo:** [https://shubham-jana-dev.github.io/Finance-Dashboard/](https://shubham-jana-dev.github.io/Finance-Dashboard/)
+**Live Demo:** [[https://shubham-jana-dev.github.io/Finance-Dashboard/]([https://dwivediananya1406.github.io/personal-finanace-tracker/]
 
 ## Project Overview
 

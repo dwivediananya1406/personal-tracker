@@ -20,30 +20,39 @@
             <p class="text-gray-500 mt-1">Your comprehensive tool for tracking income, expenses, and debts.</p>
         </header>
 
-        <div class="header-section grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-            <div class="text-center p-3 sm:p-4 rounded-xl bg-white bg-opacity-15 backdrop-blur-sm">
-                <i class="ph-wallet text-2xl mb-1"></i>
-                <p class="text-xs opacity-80 font-medium">Net Worth</p>
-                <p id="totalBalanceDisplay" class="text-2xl font-extrabold mt-1">₹ 0.00</p>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-8">
+            <!-- Net Worth -->
+            <div class="text-center p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-200 transform hover:-translate-y-1 transition-all duration-300 text-white relative overflow-hidden">
+                <div class="absolute top-0 right-0 -mt-4 -mr-4 w-20 h-20 bg-white opacity-10 rounded-full blur-md"></div>
+                <i class="ph-wallet text-3xl mb-2 opacity-90"></i>
+                <p class="text-xs font-medium text-indigo-100 uppercase tracking-wider">Net Worth</p>
+                <p id="totalBalanceDisplay" class="text-2xl sm:text-3xl font-extrabold mt-1">₹ 0.00</p>
             </div>
-            <div class="text-center p-3 sm:p-4 rounded-xl bg-white bg-opacity-15 backdrop-blur-sm">
-                <i class="ph-money text-2xl mb-1"></i>
-                <p class="text-xs opacity-80 font-medium">Cash Balance</p>
-                <p id="cashBalanceDisplay" class="text-2xl font-extrabold mt-1 text-teal-200">₹ 0.00</p>
+            <!-- Cash Balance -->
+            <div class="text-center p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-teal-400 to-emerald-600 shadow-lg shadow-teal-200 transform hover:-translate-y-1 transition-all duration-300 text-white relative overflow-hidden">
+                <div class="absolute top-0 right-0 -mt-4 -mr-4 w-20 h-20 bg-white opacity-10 rounded-full blur-md"></div>
+                <i class="ph-money text-3xl mb-2 opacity-90"></i>
+                <p class="text-xs font-medium text-teal-100 uppercase tracking-wider">Cash Balance</p>
+                <p id="cashBalanceDisplay" class="text-2xl sm:text-3xl font-extrabold mt-1">₹ 0.00</p>
             </div>
-            <div class="text-center p-3 sm:p-4 rounded-xl bg-white bg-opacity-15 backdrop-blur-sm">
-                <i class="ph-bank text-2xl mb-1"></i>
-                <p class="text-xs opacity-80 font-medium">Bank Balance</p>
-                <p id="bankBalanceDisplay" class="text-2xl font-extrabold mt-1 text-indigo-200">₹ 0.00</p>
+            <!-- Bank Balance -->
+            <div class="text-center p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-blue-400 to-sky-600 shadow-lg shadow-blue-200 transform hover:-translate-y-1 transition-all duration-300 text-white relative overflow-hidden">
+                <div class="absolute top-0 right-0 -mt-4 -mr-4 w-20 h-20 bg-white opacity-10 rounded-full blur-md"></div>
+                <i class="ph-bank text-3xl mb-2 opacity-90"></i>
+                <p class="text-xs font-medium text-blue-100 uppercase tracking-wider">Bank Balance</p>
+                <p id="bankBalanceDisplay" class="text-2xl sm:text-3xl font-extrabold mt-1">₹ 0.00</p>
             </div>
-            <div class="text-center p-3 sm:p-4 rounded-xl bg-white bg-opacity-15 backdrop-blur-sm">
-                <i class="ph-chart-line-down text-2xl mb-1"></i>
-                <p class="text-xs opacity-80 font-medium">Total Expenses</p>
-                <p id="totalExpenseDisplay" class="text-2xl font-extrabold mt-1 text-rose-200">₹ 0.00</p>
+            <!-- Total Expenses -->
+            <div class="text-center p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-rose-400 to-pink-600 shadow-lg shadow-rose-200 transform hover:-translate-y-1 transition-all duration-300 text-white relative overflow-hidden">
+                <div class="absolute top-0 right-0 -mt-4 -mr-4 w-20 h-20 bg-white opacity-10 rounded-full blur-md"></div>
+                <i class="ph-chart-line-down text-3xl mb-2 opacity-90"></i>
+                <p class="text-xs font-medium text-rose-100 uppercase tracking-wider">Total Expenses</p>
+                <p id="totalExpenseDisplay" class="text-2xl sm:text-3xl font-extrabold mt-1">₹ 0.00</p>
             </div>
+        </div>
 
-            <!-- Quick Add with AI Card -->
-            <div id="aiQuickAddCard"
+        <!-- Quick Add with AI Card (Now full width outside the grid) -->
+        <div id="aiQuickAddCard"
                 class="card p-6 bg-gradient-to-r from-indigo-600 via-indigo-700 to-indigo-850 text-white mb-6 relative overflow-hidden shadow-lg border border-indigo-500 border-opacity-30">
                 <!-- Decorative light blob in background -->
                 <div

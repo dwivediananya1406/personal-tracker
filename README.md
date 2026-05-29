@@ -47,7 +47,7 @@ If you wish to run or modify the code locally:
 
 1.  **Clone the Repository:**
     ```bash
-    git clone [https://shubham-jana-dev.github.io/Finance-Dashboard/](https://shubham-jana-dev.github.io/Finance-Dashboard/)
+    git clone https://github.com/dwivediananya1406/personal-finanace-tracker/
     ```
 2.  **Open the File:**
     Navigate to the project directory and open the `index.html` file in your preferred web browser.

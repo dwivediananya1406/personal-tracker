@@ -10,6 +10,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Serve static frontend files (index.html, style.css, finance.js)
+app.use(express.static(__dirname));
+
 const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.GEMINI_API_KEY;
 

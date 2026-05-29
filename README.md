@@ -39,7 +39,7 @@ This is a clean, modern, and **privacy-focused** web application designed to hel
 
 ### Accessing the App
 
-The application can be accessed instantly via the live GitHub Pages link: [https://shubham-jana-dev.github.io/Finance-Dashboard/](https://shubham-jana-dev.github.io/Finance-Dashboard/)
+The application can be accessed instantly via the live GitHub Pages link: (https://dwivediananya1406.github.io/personal-finanace-tracker/)]
 
 ### Local Development
 

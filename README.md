@@ -1,12 +1,12 @@
-# Sleek Personal Finance Dashboard 💰
+# Sleek Personal Finance Dashboard 💰🤖
 
-**Live Demo:** https://dwivediananya1406.github.io/personal-finanace-tracker/
+**Live Demo (Static):** [https://dwivediananya1406.github.io/personal-finanace-tracker/](https://dwivediananya1406.github.io/personal-finanace-tracker/)
 
 ## Project Overview
 
-This is a clean, modern, and **privacy-focused** web application designed to help users track their income, expenses, and manage debts efficiently. It is built entirely using **Vanilla JavaScript, HTML, and Tailwind CSS**, making it lightweight and fast.
+A clean, modern, and **privacy-focused** web application designed to help users track their income, expenses, and manage debts efficiently. Built with **Vanilla JavaScript, HTML, and Tailwind CSS**, and now supercharged with **AI-powered features** via a secure Node.js backend.
 
-**Crucially, all financial data is stored directly in your browser's Local Storage, ensuring that no external servers or databases are used.**
+**All financial data is stored directly in your browser's Local Storage** — no external databases are used. The AI server acts as a secure pass-through proxy to the Gemini API and **never stores or logs your data**.
 
 ---
 
@@ -16,11 +16,36 @@ This is a clean, modern, and **privacy-focused** web application designed to hel
 | :--- | :--- |
 | **Balance Tracking** | Separate tracking for **Cash Balance** and **Bank Balance**, automatically calculating a real-time **Net Worth**. |
 | **Transaction Recording** | Dedicated forms for adding Income and Expenses, allowing users to specify the medium (**Cash** or **Bank/UPI**) for accurate balance deduction/addition. |
-| **Custom Categories** | Supports detailed expense categorization, including: **Grocery, Food & Drink, Academic & Study, Transport, Bills & Rent, Shopping, Entertainment, Health**, and **Other**. |
-| **Debt Management** | Track both money **Lent** (Receivables) and money **Borrowed** (Payables). Includes dedicated functions and modals for marking repayment and adjusting balances. |
-| **Data Visualization** | A dynamic **Pie Chart (via Chart.js)** instantly breaks down spending by category, providing visual insights into where money goes. |
-| **History & Deletion** | Comprehensive lists for all income and expense history, with the ability to **delete any record** and automatically reverse the corresponding balance change. |
-| **User Experience** | Non-intrusive confirmation messages (snackbars) provide real-time feedback on successful transactions and balance deductions. |
+| **Custom Categories** | Supports detailed expense categorization: **Grocery, Food & Drink, Academic & Study, Transport, Bills & Rent, Shopping, Entertainment, Health**, and **Other**. |
+| **Debt Management** | Track both money **Lent** (Receivables) and money **Borrowed** (Payables). Includes dedicated modals for marking repayment and adjusting balances. |
+| **Data Visualization** | A dynamic **Pie Chart (via Chart.js)** instantly breaks down spending by category, providing visual insights. |
+| **History & Deletion** | Comprehensive lists for all income and expense history, with the ability to **delete any record** and automatically reverse the balance change. |
+| **⚡ Quick Add with AI** | Type a natural language sentence like *"Spent 300 on lunch at Burger King via cash"* and the AI automatically parses and records the transaction! |
+| **🤖 FinAI Advisor Chat** | An interactive AI-powered financial advisor that analyzes your real transaction data, spending patterns, and debt positions to give personalized advice. |
+| **User Experience** | Non-intrusive snackbar notifications provide real-time feedback on successful transactions. |
+
+---
+
+## Architecture 🏗️
+
+```
+┌──────────────────────┐        ┌───────────────────────┐        ┌──────────────────┐
+│   Frontend (Browser) │  HTTP  │  Node.js/Express      │  HTTPS │  Google Gemini   │
+│                      │ ◄────► │  Server (localhost)    │ ◄────► │  API             │
+│  - index.html        │        │                       │        │                  │
+│  - finance.js        │        │  - API key in .env    │        │  gemini-2.5-flash│
+│  - LocalStorage      │        │  - No data stored     │        │                  │
+└──────────────────────┘        └───────────────────────┘        └──────────────────┘
+         ▲
+         │ All financial data
+         ▼ stays in LocalStorage
+```
+
+- **Frontend:** Static HTML/CSS/JS served from GitHub Pages (or opened locally).
+- **Backend:** A lightweight Express.js proxy server that securely holds the Gemini API key and forwards AI requests. It **never** stores or logs any user data.
+- **AI Provider:** Google Gemini 2.5 Flash via the `@google/generative-ai` SDK.
+
+> **Note:** The AI features (Quick Add & FinAI Advisor) only work when the Node.js server is running locally. The static GitHub Pages demo provides all non-AI features without a server.
 
 ---
 
@@ -32,35 +57,77 @@ This is a clean, modern, and **privacy-focused** web application designed to hel
 * **Chart.js:** Used for the interactive expense breakdown chart.
 * **Phosphor Icons (CDN):** Used for simple, clean iconography.
 * **Local Storage:** The persistent storage mechanism for all financial data.
+* **Node.js + Express:** Backend server for secure AI API proxying.
+* **Google Gemini API:** Powers the Quick Add parser and FinAI Advisor chat.
 
 ---
 
 ## Setup and Usage 🚀
 
-### Accessing the App
+### Prerequisites
 
-The application can be accessed instantly via the live GitHub Pages link: (https://dwivediananya1406.github.io/personal-finanace-tracker/)]
+- [Node.js](https://nodejs.org/) (v18 or later)
+- A free [Google Gemini API Key](https://aistudio.google.com/app/apikey)
 
-### Local Development
+### Installation
 
-If you wish to run or modify the code locally:
+1. **Clone the Repository:**
+   ```bash
+   git clone https://github.com/dwivediananya1406/personal-finanace-tracker.git
+   cd personal-finanace-tracker
+   ```
 
-1.  **Clone the Repository:**
-    ```bash
-    git clone https://github.com/dwivediananya1406/personal-finanace-tracker/
-    ```
-2.  **Open the File:**
-    Navigate to the project directory and open the `index.html` file in your preferred web browser.
+2. **Install Dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Configure your API Key:**
+   ```bash
+   cp .env.example .env
+   ```
+   Open the `.env` file and paste your Gemini API key:
+   ```
+   GEMINI_API_KEY=your_api_key_here
+   ```
+
+4. **Start the Server:**
+   ```bash
+   npm start
+   ```
+   The server will start on `http://localhost:3000`.
+
+5. **Open the Dashboard:**
+   Open `index.html` in your browser. The AI features will automatically connect to your local server.
 
 ### Getting Started
 
 * Use the **Initial Setup** form to set your starting Cash and Bank Balances.
 * Use the **Add Income** and **Add Expense** forms to record transactions.
+* Try **Quick Add with AI** — type something like *"Earned 5000 salary via bank"* or *"Lent 500 cash to Rahul for food"*.
+* Click the **✨ sparkle button** (bottom-right) to open the **FinAI Advisor** and ask questions about your finances.
+
+---
+
+## Project Structure 📁
+
+```
+personal-finanace-tracker/
+├── index.html        # Main dashboard UI
+├── finance.js        # Application logic + AI integration
+├── style.css         # Custom styles
+├── server.js         # Node.js AI proxy server (Gemini)
+├── package.json      # Node.js dependencies
+├── .env              # 🔒 Your secret API key (gitignored)
+├── .env.example      # Template for API key setup
+├── .gitignore        # Protects .env and node_modules
+└── README.md         # This file
+```
 
 ---
 
 ## Developer Credit
 
-Developed with ❤️ by Shubham Jana.
+Developed with ❤️ by Ananya Dwivedi.
 
-**Developer Contact:** [dwivediananya1406@gmail.com](dwivediananya1406@gmail.com)
+**Developer Contact:** [dwivediananya1406@gmail.com](mailto:dwivediananya1406@gmail.com)

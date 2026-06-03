@@ -12,7 +12,13 @@ app.use(cors());
 app.use(express.json());
 
 // Serve static frontend files (index.html, style.css, finance.js, admin.html)
+const path = require('path');
 app.use(express.static(__dirname));
+
+// Explicitly serve index.html on root route to fix deployment 404s
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.GEMINI_API_KEY;
@@ -235,10 +241,14 @@ ${borrowedSummary}`;
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`===================================================`);
-    console.log(`🚀 Personal Finance AI Server running on port ${PORT}`);
-    console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
-    console.log(`🤖 AI Provider: Google Gemini Flash Latest`);
-    console.log(`===================================================`);
-});
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+    app.listen(PORT, () => {
+        console.log(`===================================================`);
+        console.log(`🚀 Personal Finance AI Server running on port ${PORT}`);
+        console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
+        console.log(`🤖 AI Provider: Google Gemini Flash Latest`);
+        console.log(`===================================================`);
+    });
+}
+
+module.exports = app;

@@ -602,7 +602,9 @@ const BACKEND_URL = window.location.hostname === 'localhost' || window.location.
     : 'https://personal-tracker-theta.vercel.app';
 
 // Handle Quick Add form submission
-document.getElementById('aiQuickAddForm').addEventListener('submit', async (e) => {
+const aiQuickAddForm = document.getElementById('aiQuickAddForm');
+if (aiQuickAddForm) {
+    aiQuickAddForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const inputField = document.getElementById('aiQuickAddInput');
     const text = inputField.value.trim();
@@ -734,20 +736,20 @@ const aiChatOpenBtn = document.getElementById('aiChatOpenBtn');
 const aiChatCloseBtn = document.getElementById('aiChatCloseBtn');
 
 const openChatDrawer = () => {
-    aiChatDrawer.classList.add('drawer-open');
-    aiChatOverlay.classList.remove('hidden');
+    if (aiChatDrawer) aiChatDrawer.classList.add('drawer-open');
+    if (aiChatOverlay) aiChatOverlay.classList.remove('hidden');
     // Periodically check server on open
     checkServerStatus();
 };
 
 const closeChatDrawer = () => {
-    aiChatDrawer.classList.remove('drawer-open');
-    aiChatOverlay.classList.add('hidden');
+    if (aiChatDrawer) aiChatDrawer.classList.remove('drawer-open');
+    if (aiChatOverlay) aiChatOverlay.classList.add('hidden');
 };
 
-aiChatOpenBtn.addEventListener('click', openChatDrawer);
-aiChatCloseBtn.addEventListener('click', closeChatDrawer);
-aiChatOverlay.addEventListener('click', closeChatDrawer);
+if (aiChatOpenBtn) aiChatOpenBtn.addEventListener('click', openChatDrawer);
+if (aiChatCloseBtn) aiChatCloseBtn.addEventListener('click', closeChatDrawer);
+if (aiChatOverlay) aiChatOverlay.addEventListener('click', closeChatDrawer);
 
 // Server status checking
 const checkServerStatus = async () => {
@@ -772,10 +774,15 @@ const checkServerStatus = async () => {
     }
 };
 
-document.getElementById('aiServerRetryBtn').addEventListener('click', checkServerStatus);
+const aiServerRetryBtn = document.getElementById('aiServerRetryBtn');
+if (aiServerRetryBtn) {
+    aiServerRetryBtn.addEventListener('click', checkServerStatus);
+}
 
 // Chat submission logic
-document.getElementById('aiChatForm').addEventListener('submit', async (e) => {
+const aiChatForm = document.getElementById('aiChatForm');
+if (aiChatForm) {
+    aiChatForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const input = document.getElementById('aiChatInput');
     const message = input.value.trim();
@@ -938,9 +945,14 @@ const handlePillClick = async (promptText) => {
     await sendChatMessage(promptText);
 };
 
-document.getElementById('pillHealth').addEventListener('click', () => handlePillClick('Give me a high-level summary of my financial health, noting if my cash vs bank balance ratio is good.'));
-document.getElementById('pillSpend').addEventListener('click', () => handlePillClick('Analyze my spending by category, tell me which is the highest, and provide 3 tips to reduce spending there.'));
-document.getElementById('pillDebts').addEventListener('click', () => handlePillClick('Summarize my debts: who owes me money and who do I owe? What is my net debt position?'));
+const pillHealth = document.getElementById('pillHealth');
+if (pillHealth) pillHealth.addEventListener('click', () => handlePillClick('Give me a high-level summary of my financial health, noting if my cash vs bank balance ratio is good.'));
+
+const pillSpend = document.getElementById('pillSpend');
+if (pillSpend) pillSpend.addEventListener('click', () => handlePillClick('Analyze my spending by category, tell me which is the highest, and provide 3 tips to reduce spending there.'));
+
+const pillDebts = document.getElementById('pillDebts');
+if (pillDebts) pillDebts.addEventListener('click', () => handlePillClick('Summarize my debts: who owes me money and who do I owe? What is my net debt position?'));
 
 
 // --- Authentication Logic ---

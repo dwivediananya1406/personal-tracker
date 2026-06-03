@@ -649,6 +649,7 @@ if (aiQuickAddForm) {
         spinner.classList.add('hidden');
     }
 });
+}
 
 // Map AI parsed transaction to local storage state
 const addAIParsedTransaction = (data) => {
@@ -791,6 +792,7 @@ if (aiChatForm) {
     input.value = '';
     await sendChatMessage(message);
 });
+}
 
 // Render user and advisor messages in the DOM
 const appendMessage = (sender, text) => {

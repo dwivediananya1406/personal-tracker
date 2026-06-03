@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const db = require('./database');
 
 // Load environment variables
 dotenv.config();
@@ -10,11 +11,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve static frontend files (index.html, style.css, finance.js)
+// Serve static frontend files (index.html, style.css, finance.js, admin.html)
 app.use(express.static(__dirname));
 
 const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.GEMINI_API_KEY;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 // Simple health check route
 app.get('/api/health', (req, res) => {
@@ -22,6 +24,53 @@ app.get('/api/health', (req, res) => {
         status: 'ok',
         apiConfigured: !!API_KEY
     });
+});
+
+/**
+ * Endpoint to record visit pings
+ */
+app.post('/api/analytics/ping', (req, res) => {
+    const { visitorId } = req.body;
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const userAgent = req.headers['user-agent'];
+    db.recordVisit(visitorId, ip, userAgent);
+    res.json({ success: true });
+});
+
+/**
+ * Endpoint to verify admin credentials
+ */
+app.post('/api/admin/verify', (req, res) => {
+    const { password } = req.body;
+    if (password === ADMIN_PASSWORD) {
+        res.json({ success: true });
+    } else {
+        res.status(401).json({ error: 'Incorrect admin password.' });
+    }
+});
+
+/**
+ * Endpoint to retrieve analytics stats (requires admin auth header)
+ */
+app.get('/api/admin/stats', (req, res) => {
+    const authHeader = req.headers['authorization'];
+    if (authHeader !== ADMIN_PASSWORD) {
+        return res.status(403).json({ error: 'Unauthorized access.' });
+    }
+    const stats = db.getStats();
+    res.json(stats);
+});
+
+/**
+ * Endpoint to clear logs (requires admin auth header)
+ */
+app.post('/api/admin/clear', (req, res) => {
+    const authHeader = req.headers['authorization'];
+    if (authHeader !== ADMIN_PASSWORD) {
+        return res.status(403).json({ error: 'Unauthorized access.' });
+    }
+    const success = db.clearLogs();
+    res.json({ success });
 });
 
 /**

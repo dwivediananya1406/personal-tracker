@@ -943,9 +943,173 @@ document.getElementById('pillSpend').addEventListener('click', () => handlePillC
 document.getElementById('pillDebts').addEventListener('click', () => handlePillClick('Summarize my debts: who owes me money and who do I owe? What is my net debt position?'));
 
 
+// --- Authentication Logic ---
+const AUTH_KEY = 'financeTracker_authenticated';
+const PASSCODE_KEY = 'financeTracker_passcode_hash';
+const USER_NAME_KEY = 'financeTracker_user_name';
+
+// Simple hashing function for local passcode storage
+const simpleHash = (str) => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32bit integer
+    }
+    return hash.toString(36);
+};
+
+const getStoredPasscodeHash = () => {
+    return localStorage.getItem(PASSCODE_KEY);
+};
+
+const checkAuth = () => {
+    const authStatus = localStorage.getItem(AUTH_KEY);
+    const hasPasscode = !!getStoredPasscodeHash();
+    const authContainer = document.getElementById('authContainer');
+    const dashboardContainer = document.getElementById('dashboardContainer');
+    const setupForm = document.getElementById('setupForm');
+    const loginForm = document.getElementById('loginForm');
+    const authTitle = document.getElementById('authTitle');
+    const authSubTitle = document.getElementById('authSubTitle');
+    const authIcon = document.getElementById('authIcon');
+
+    if (authStatus === 'true' && hasPasscode) {
+        authContainer.classList.add('hidden');
+        dashboardContainer.classList.remove('hidden');
+        return true;
+    } else {
+        authContainer.classList.remove('hidden');
+        dashboardContainer.classList.add('hidden');
+
+        if (!hasPasscode) {
+            setupForm.classList.remove('hidden');
+            loginForm.classList.add('hidden');
+            authTitle.textContent = "Secure Your Dashboard";
+            authSubTitle.textContent = "Create a custom passcode to protect your financial logs.";
+            authIcon.className = "ph-lock-key-open text-4xl text-teal-400 animate-pulse";
+        } else {
+            setupForm.classList.add('hidden');
+            loginForm.classList.remove('hidden');
+            authTitle.textContent = "Access Secured";
+            authSubTitle.textContent = "Enter your custom passcode to unlock the dashboard.";
+            authIcon.className = "ph-shield-check text-4xl text-yellow-300";
+        }
+        return false;
+    }
+};
+
+const handleSetupSubmit = (e) => {
+    e.preventDefault();
+    const name = document.getElementById('setupNameInput').value.trim();
+    const passcode = document.getElementById('setupPasscodeInput').value;
+    const confirm = document.getElementById('confirmPasscodeInput').value;
+    const errorEl = document.getElementById('setupError');
+    const errorMsg = document.getElementById('setupErrorMessage');
+
+    if (!name) {
+        errorEl.classList.remove('hidden');
+        errorMsg.textContent = "Please enter your name.";
+        return;
+    }
+
+    if (passcode.length < 4) {
+        errorEl.classList.remove('hidden');
+        errorMsg.textContent = "Passcode must be at least 4 characters long.";
+        return;
+    }
+
+    if (passcode !== confirm) {
+        errorEl.classList.remove('hidden');
+        errorMsg.textContent = "Passcodes do not match. Please try again.";
+        return;
+    }
+
+    errorEl.classList.add('hidden');
+    const hash = simpleHash(passcode);
+    localStorage.setItem(PASSCODE_KEY, hash);
+    localStorage.setItem(USER_NAME_KEY, name);
+    localStorage.setItem(AUTH_KEY, 'true');
+    
+    // Clear setup fields
+    document.getElementById('setupNameInput').value = '';
+    document.getElementById('setupPasscodeInput').value = '';
+    document.getElementById('confirmPasscodeInput').value = '';
+    
+    checkAuth();
+    initDashboard();
+    showTemporaryMessage(`Welcome, ${name}! Dashboard unlocked.`, "success");
+};
+
+const handleLoginSubmit = (e) => {
+    e.preventDefault();
+    const passcode = document.getElementById('loginPasscodeInput').value;
+    const errorEl = document.getElementById('loginError');
+    const errorMsg = document.getElementById('loginErrorMessage');
+    
+    const storedHash = getStoredPasscodeHash();
+    if (simpleHash(passcode) === storedHash) {
+        localStorage.setItem(AUTH_KEY, 'true');
+        errorEl.classList.add('hidden');
+        
+        // Clear login field
+        document.getElementById('loginPasscodeInput').value = '';
+        
+        checkAuth();
+        initDashboard();
+        showTemporaryMessage("Welcome back! Dashboard unlocked.", "success");
+    } else {
+        errorEl.classList.remove('hidden');
+        errorMsg.textContent = "Incorrect passcode. Please try again.";
+    }
+};
+
+const handleLogout = () => {
+    localStorage.removeItem(AUTH_KEY);
+    
+    // Clear input fields
+    const loginInput = document.getElementById('loginPasscodeInput');
+    if (loginInput) loginInput.value = '';
+    
+    const loginError = document.getElementById('loginError');
+    if (loginError) loginError.classList.add('hidden');
+    
+    checkAuth();
+    showTemporaryMessage("Logged out successfully.", "success");
+};
+
+const handleResetAuth = () => {
+    if (confirm("Are you sure you want to reset your credentials? This will clear your passcode and registered name so you can set them up again. Your financial logs and transaction history will remain safe.")) {
+        localStorage.removeItem(PASSCODE_KEY);
+        localStorage.removeItem(AUTH_KEY);
+        localStorage.removeItem(USER_NAME_KEY);
+        checkAuth();
+        showTemporaryMessage("Credentials cleared. Please register a new name and passcode.", "success");
+    }
+};
+
 // --- Initialization ---
 const init = () => {
+    // Add auth event listeners
+    document.getElementById('setupForm').addEventListener('submit', handleSetupSubmit);
+    document.getElementById('loginForm').addEventListener('submit', handleLoginSubmit);
+    document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+    document.getElementById('resetAuthBtn').addEventListener('click', handleResetAuth);
+
+    // Check auth status first
+    const authenticated = checkAuth();
+    if (authenticated) {
+        initDashboard();
+    }
+};
+
+const initDashboard = () => {
     loadState();
+    
+    // Set personalized welcome message
+    const userName = localStorage.getItem(USER_NAME_KEY) || 'User';
+    document.getElementById('welcomeName').textContent = userName;
+    
     // Set current date on date inputs
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('incomeDate').value = today;

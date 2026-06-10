@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Sleek Personal Finance Dashboard",
   "scripts": {
+    "build": "echo 'No build step required'",
     "dev": "node local-server.js",
     "local-start": "node local-server.js"
   },

@@ -39,13 +39,14 @@ const formatCurrency = (amount) => {
 const loadState = async () => {
     if (!currentUser) return;
     try {
+        // maybeSingle() returns null (not an error) when no row exists, avoiding 406 errors
         const { data, error } = await supabaseClient
             .from('user_data')
             .select('state')
             .eq('id', currentUser.id)
-            .single();
+            .maybeSingle();
             
-        if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+        if (error) {
             console.error("Supabase load error:", error);
             showTemporaryMessage("Failed to load data from server.", "error");
             return;
@@ -1071,7 +1072,16 @@ const handleSignUp = async (e) => {
 
     if (error) {
         errorEl.classList.remove('hidden');
-        errorMsg.textContent = error.message;
+        // Handle common Supabase signup errors with friendly messages
+        if (error.status === 422 || error.message?.toLowerCase().includes('already registered') || error.message?.toLowerCase().includes('user already exists')) {
+            errorMsg.textContent = "This email is already registered. Please log in instead.";
+            // Auto-switch to login after 2 seconds
+            setTimeout(() => toggleAuthForms(true), 2000);
+        } else if (error.message?.toLowerCase().includes('email')) {
+            errorMsg.textContent = "Please enter a valid email address.";
+        } else {
+            errorMsg.textContent = error.message;
+        }
     } else {
         showTemporaryMessage("Registration successful! You are now logged in.", "success");
         // session change listener will handle UI update

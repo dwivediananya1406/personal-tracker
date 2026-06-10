@@ -1,15 +1,8 @@
-const fs = require('fs');
-const path = require('path');
 const crypto = require('crypto');
 
-const DB_PATH = path.join(__dirname, 'analytics.json');
-
-// Ensure database file exists
-const initDb = () => {
-    if (!fs.existsSync(DB_PATH)) {
-        fs.writeFileSync(DB_PATH, JSON.stringify({ visits: [] }, null, 2));
-    }
-};
+// In-memory analytics store (resets on cold start, safe for Vercel serverless)
+// For persistent analytics, connect a real database like Supabase or PlanetScale
+let analyticsData = { visits: [] };
 
 // Simple helper to hash IP for privacy
 const hashIp = (ip) => {
@@ -26,12 +19,9 @@ const getDeviceType = (userAgent) => {
     return 'Desktop';
 };
 
-// Record a visit
+// Record a visit (in-memory, resets on cold start in serverless environments)
 const recordVisit = (visitorId, ip, userAgent) => {
     try {
-        initDb();
-        const data = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
-        
         const timestamp = new Date();
         const dateString = timestamp.toISOString().split('T')[0]; // YYYY-MM-DD
         const ipHash = hashIp(ip);
@@ -45,8 +35,7 @@ const recordVisit = (visitorId, ip, userAgent) => {
             deviceType
         };
 
-        data.visits.push(newVisit);
-        fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+        analyticsData.visits.push(newVisit);
         return true;
     } catch (e) {
         console.error('Failed to record visit:', e);
@@ -57,9 +46,7 @@ const recordVisit = (visitorId, ip, userAgent) => {
 // Fetch aggregated stats for the admin dashboard
 const getStats = () => {
     try {
-        initDb();
-        const data = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
-        const visits = data.visits || [];
+        const visits = analyticsData.visits || [];
 
         // 1. Total Visits (Page Loads)
         const totalVisits = visits.length;
@@ -150,7 +137,7 @@ const getStats = () => {
 // Clear all analytics logs
 const clearLogs = () => {
     try {
-        fs.writeFileSync(DB_PATH, JSON.stringify({ visits: [] }, null, 2));
+        analyticsData = { visits: [] };
         return true;
     } catch (e) {
         console.error('Failed to clear analytics logs:', e);

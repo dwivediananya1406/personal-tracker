@@ -13,11 +13,11 @@ app.use(express.json());
 
 // Serve static frontend files (index.html, style.css, finance.js, admin.html)
 const path = require('path');
-app.use(express.static(__dirname));
+app.use(express.static(process.cwd()));
 
 // Explicitly serve index.html on root route to fix deployment 404s
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(process.cwd(), 'index.html'));
 });
 
 const PORT = process.env.PORT || 3000;

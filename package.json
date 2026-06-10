@@ -3,9 +3,8 @@
   "version": "1.0.0",
   "description": "Sleek Personal Finance Dashboard",
   "scripts": {
-    "build": "echo 'No build step required'",
-    "dev": "node local-server.js",
-    "local-start": "node local-server.js"
+    "dev": "node index.js",
+    "local-start": "node index.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

@@ -1,12 +1,29 @@
 {
   "version": 2,
-  "functions": {
-    "index.js": {
-      "includeFiles": "index.html,finance.js,style.css,database.js"
+  "builds": [
+    {
+      "src": "api/*.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "index.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "finance.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "style.css",
+      "use": "@vercel/static"
     }
-  },
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/index.js" },
-    { "source": "/(.*)", "destination": "/index.js" }
+  ],
+  "routes": [
+    { "src": "/api/parse-transaction", "dest": "/api/parse-transaction.js" },
+    { "src": "/api/chat-advisor", "dest": "/api/chat-advisor.js" },
+    { "src": "/api/health", "dest": "/api/health.js" },
+    { "src": "/finance.js", "dest": "/finance.js" },
+    { "src": "/style.css", "dest": "/style.css" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }

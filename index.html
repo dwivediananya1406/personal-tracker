@@ -5,9 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sleek Personal Finance Dashboard 1</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
     <script src="https://unpkg.com/phosphor-icons"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <link rel="stylesheet" href="style.css">
 </head>
@@ -31,10 +32,10 @@
             
             <!-- Login/Setup Forms -->
             <div class="p-8 space-y-6">
-                <!-- Setup Passcode Form (First-Time Users) -->
+                <!-- Sign Up Form -->
                 <form id="setupForm" class="hidden space-y-4">
                     <div>
-                        <label for="setupNameInput" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Your Name</label>
+                        <label for="setupNameInput" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Username</label>
                         <div class="relative">
                             <i class="ph-user text-gray-400 text-lg absolute left-3.5 top-3.5"></i>
                             <input type="text" id="setupNameInput" placeholder="Enter your name" required
@@ -43,65 +44,79 @@
                     </div>
 
                     <div>
-                        <label for="setupPasscodeInput" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Create Passcode / Password</label>
+                        <label for="setupEmailInput" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Email Address</label>
                         <div class="relative">
-                            <i class="ph-lock text-gray-400 text-lg absolute left-3.5 top-3.5"></i>
-                            <input type="password" id="setupPasscodeInput" placeholder="Enter passcode" required
+                            <i class="ph-envelope text-gray-400 text-lg absolute left-3.5 top-3.5"></i>
+                            <input type="email" id="setupEmailInput" placeholder="Enter your email" required
                                 class="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-slate-200 focus:border-indigo-600 outline-none transition-all text-sm font-medium">
                         </div>
                     </div>
-                    
+
                     <div>
-                        <label for="confirmPasscodeInput" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Confirm Passcode / Password</label>
+                        <label for="setupPasscodeInput" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Create Password</label>
                         <div class="relative">
-                            <i class="ph-lock-key text-gray-400 text-lg absolute left-3.5 top-3.5"></i>
-                            <input type="password" id="confirmPasscodeInput" placeholder="Confirm passcode" required
+                            <i class="ph-lock text-gray-400 text-lg absolute left-3.5 top-3.5"></i>
+                            <input type="password" id="setupPasscodeInput" placeholder="Enter password (min 6 chars)" required minlength="6"
                                 class="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-slate-200 focus:border-indigo-600 outline-none transition-all text-sm font-medium">
                         </div>
                     </div>
                     
                     <div id="setupError" class="hidden text-rose-500 text-xs font-semibold flex items-center bg-rose-50 p-3 rounded-lg border border-rose-100">
                         <i class="ph-warning-circle-fill text-base mr-2 flex-shrink-0"></i>
-                        <span id="setupErrorMessage">Passcodes do not match.</span>
+                        <span id="setupErrorMessage">Registration failed.</span>
                     </div>
                     
-                    <button type="submit"
+                    <button type="submit" id="setupSubmitBtn"
                         class="w-full bg-teal-600 hover:bg-teal-700 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-teal-100 flex items-center justify-center space-x-2 text-sm transition-all">
-                        <span>Register Passcode</span>
-                        <i class="ph-shield-check font-bold"></i>
+                        <span>Sign Up</span>
+                        <i class="ph-user-plus font-bold"></i>
+                    </button>
+                    
+                    <button type="button" id="switchToLoginBtn"
+                        class="w-full text-center text-xs text-slate-500 hover:text-indigo-600 transition-colors font-semibold pt-1 focus:outline-none">
+                        Already have an account? Log in
                     </button>
                 </form>
 
-                <!-- Unlock Form (Returning Users) -->
+                <!-- Login Form -->
                 <form id="loginForm" class="hidden space-y-4">
                     <div>
-                        <label for="loginPasscodeInput" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Enter Passcode / Password</label>
+                        <label for="loginEmailInput" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Email Address</label>
+                        <div class="relative">
+                            <i class="ph-envelope text-gray-400 text-lg absolute left-3.5 top-3.5"></i>
+                            <input type="email" id="loginEmailInput" placeholder="Enter your email" required
+                                class="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-slate-200 focus:border-indigo-600 outline-none transition-all text-sm font-medium">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="loginPasscodeInput" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Password</label>
                         <div class="relative">
                             <i class="ph-key-hole text-gray-400 text-lg absolute left-3.5 top-3.5"></i>
-                            <input type="password" id="loginPasscodeInput" placeholder="Enter passcode to unlock" required
+                            <input type="password" id="loginPasscodeInput" placeholder="Enter password" required
                                 class="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-slate-200 focus:border-indigo-600 outline-none transition-all text-sm font-medium">
                         </div>
                     </div>
                     
                     <div id="loginError" class="hidden text-rose-500 text-xs font-semibold flex items-center bg-rose-50 p-3 rounded-lg border border-rose-100">
                         <i class="ph-warning-circle-fill text-base mr-2 flex-shrink-0"></i>
-                        <span id="loginErrorMessage">Invalid passcode. Please try again.</span>
+                        <span id="loginErrorMessage">Invalid email or password.</span>
                     </div>
                     
-                    <button type="submit"
+                    <button type="submit" id="loginSubmitBtn"
                         class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-indigo-100 flex items-center justify-center space-x-2 text-sm transition-all">
-                        <span>Unlock Dashboard</span>
-                        <i class="ph-key font-bold"></i>
+                        <span>Log In</span>
+                        <i class="ph-sign-in font-bold"></i>
                     </button>
 
-                    <button type="button" id="resetAuthBtn"
+                    <button type="button" id="switchToSignupBtn"
                         class="w-full text-center text-xs text-slate-500 hover:text-indigo-600 transition-colors font-semibold pt-1 focus:outline-none">
-                        Forgot passcode? Reset name & password
+                        Don't have an account? Sign up
                     </button>
                 </form>
                 
                 <p class="text-[10px] text-center text-gray-400 leading-normal">
-                    This dashboard runs fully in your browser. All data and passcode credentials are stored strictly on your local device.
+                    Your data is securely stored and synced across devices via Supabase.
                 </p>
             </div>
         </div>
@@ -115,10 +130,26 @@
                 </h1>
                 <p class="text-gray-500 mt-1">Your comprehensive tool for tracking income, expenses, and debts.</p>
             </div>
-            <button id="logoutBtn" class="mt-4 sm:mt-0 px-4 py-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl font-bold border border-rose-200 flex items-center justify-center space-x-2 text-sm transition-all self-start sm:self-center">
-                <i class="ph-sign-out text-lg"></i>
-                <span>Logout</span>
-            </button>
+            
+            <div class="relative mt-4 sm:mt-0 self-start sm:self-center">
+                <button id="userAvatarBtn" class="w-14 h-14 rounded-full bg-indigo-100 hover:bg-indigo-200 transition-colors flex items-center justify-center border-2 border-indigo-200 shadow-sm focus:outline-none">
+                    <i class="ph-user text-3xl text-indigo-600"></i>
+                </button>
+                
+                <!-- Dropdown Menu -->
+                <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 z-50 overflow-hidden">
+                    <div class="px-4 py-3 border-b border-gray-50 bg-gray-50/50">
+                        <p class="text-sm font-bold text-gray-800" id="dropdownUserName">User</p>
+                        <p class="text-xs text-gray-500 truncate mt-0.5" id="dropdownUserEmail">user@example.com</p>
+                    </div>
+                    <div class="p-2">
+                        <button id="logoutBtn" class="w-full px-3 py-2 text-left text-sm font-bold text-rose-600 hover:bg-rose-50 rounded-lg flex items-center space-x-2 transition-colors">
+                            <i class="ph-sign-out text-lg"></i>
+                            <span>Logout</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </header>
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-8">
@@ -500,7 +531,7 @@
             </div>
         </div>
 
-        <script src="finance.js"></script>
+        <script src="finance.js?v=2"></script>
 
 </body>
 

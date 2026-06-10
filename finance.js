@@ -1,11 +1,28 @@
-const STORAGE_KEY = 'financeTrackerState_enhanced_en';
+// --- Supabase Initialization ---
+const SUPABASE_URL = 'https://xgitdfjmihfsobvacddb.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhnaXRkZmptaWhmc29idmFjZGRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NDAzODYsImV4cCI6MjA5NjExNjM4Nn0.SlNyVUsINVPda9QQT9eiKS8LXk0iVtGl69pRWuGT2_Q';
+let supabaseClient = null;
+if (window.supabase) {
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+} else {
+    console.error("Supabase CDN failed to load. Check your internet connection or adblocker.");
+}
+
+let currentUser = null;
+
 let state = {
     bankBalance: 0,
     cashBalance: 0,
     incomes: [],
     expenses: [],
     lent: [],
-    borrowed: []
+    borrowed: [],
+    budgetLimits: {
+        daily: null,
+        weekly: null,
+        monthly: null,
+        yearly: null
+    }
 };
 let expenseChart = null; 
 
@@ -19,23 +36,49 @@ const formatCurrency = (amount) => {
     return `₹ ${num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
-const loadState = () => {
+const loadState = async () => {
+    if (!currentUser) return;
     try {
-        const storedState = localStorage.getItem(STORAGE_KEY);
-        if (storedState) {
-            state = JSON.parse(storedState);
+        const { data, error } = await supabaseClient
+            .from('user_data')
+            .select('state')
+            .eq('id', currentUser.id)
+            .single();
+            
+        if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+            console.error("Supabase load error:", error);
+            showTemporaryMessage("Failed to load data from server.", "error");
+            return;
+        }
+        
+        if (data && data.state) {
+            // Merge loaded state with default structure
+            state = { ...state, ...data.state };
         }
     } catch (e) {
-        console.error("Local storage load error:", e);
+        console.error("Supabase load exception:", e);
     }
 };
 
-const saveState = () => {
+const saveState = async () => {
+    renderApp(); // Render optimistically
+    if (!currentUser) return;
+    
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        renderApp();
+        const { error } = await supabaseClient
+            .from('user_data')
+            .upsert({ 
+                id: currentUser.id, 
+                state: state,
+                updated_at: new Date().toISOString()
+            });
+            
+        if (error) {
+            console.error("Supabase save error:", error);
+            showTemporaryMessage("Failed to sync data to server.", "error");
+        }
     } catch (e) {
-        console.error("Local storage save error:", e);
+        console.error("Supabase save exception:", e);
     }
 };
 
@@ -599,7 +642,7 @@ const showTemporaryMessage = (message, type) => {
 // Auto-detect backend: use Vercel in production, localhost in dev
 const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://localhost:3000'
-    : 'https://personal-tracker-theta.vercel.app';
+    : window.location.origin;
 
 // Handle Quick Add form submission
 const aiQuickAddForm = document.getElementById('aiQuickAddForm');
@@ -957,172 +1000,207 @@ const pillDebts = document.getElementById('pillDebts');
 if (pillDebts) pillDebts.addEventListener('click', () => handlePillClick('Summarize my debts: who owes me money and who do I owe? What is my net debt position?'));
 
 
-// --- Authentication Logic ---
-const AUTH_KEY = 'financeTracker_authenticated';
-const PASSCODE_KEY = 'financeTracker_passcode_hash';
-const USER_NAME_KEY = 'financeTracker_user_name';
+// --- Supabase Authentication Logic ---
 
-// Simple hashing function for local passcode storage
-const simpleHash = (str) => {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convert to 32bit integer
-    }
-    return hash.toString(36);
-};
-
-const getStoredPasscodeHash = () => {
-    return localStorage.getItem(PASSCODE_KEY);
-};
-
-const checkAuth = () => {
-    const authStatus = localStorage.getItem(AUTH_KEY);
-    const hasPasscode = !!getStoredPasscodeHash();
+const updateUIForAuthState = (session) => {
     const authContainer = document.getElementById('authContainer');
     const dashboardContainer = document.getElementById('dashboardContainer');
+    
+    if (session && session.user) {
+        currentUser = session.user;
+        authContainer.classList.add('hidden');
+        dashboardContainer.classList.remove('hidden');
+
+        // Populate user dropdown details
+        const name = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
+        const email = currentUser.email;
+        const dropdownName = document.getElementById('dropdownUserName');
+        const dropdownEmail = document.getElementById('dropdownUserEmail');
+        if (dropdownName) dropdownName.textContent = name;
+        if (dropdownEmail) dropdownEmail.textContent = email;
+
+        initDashboard();
+    } else {
+        currentUser = null;
+        authContainer.classList.remove('hidden');
+        dashboardContainer.classList.add('hidden');
+        
+        // Default to showing login form
+        document.getElementById('loginForm').classList.remove('hidden');
+        document.getElementById('setupForm').classList.add('hidden');
+        
+        document.getElementById('authTitle').textContent = "Access Secured";
+        document.getElementById('authSubTitle').textContent = "Please log in to your dashboard.";
+        document.getElementById('authIcon').className = "ph-shield-check text-4xl text-yellow-300";
+    }
+};
+
+const handleSignUp = async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('setupNameInput').value.trim();
+    const email = document.getElementById('setupEmailInput').value.trim();
+    const password = document.getElementById('setupPasscodeInput').value;
+    const errorEl = document.getElementById('setupError');
+    const errorMsg = document.getElementById('setupErrorMessage');
+    const btn = document.getElementById('setupSubmitBtn');
+
+    if (!name) {
+        errorEl.classList.remove('hidden');
+        errorMsg.textContent = "Please enter a username.";
+        return;
+    }
+
+    if (password.length < 6) {
+        errorEl.classList.remove('hidden');
+        errorMsg.textContent = "Password must be at least 6 characters.";
+        return;
+    }
+
+    btn.disabled = true;
+    errorEl.classList.add('hidden');
+    
+    const { data, error } = await supabaseClient.auth.signUp({
+        email: email,
+        password: password,
+        options: {
+            data: { full_name: name }
+        }
+    });
+
+    btn.disabled = false;
+
+    if (error) {
+        errorEl.classList.remove('hidden');
+        errorMsg.textContent = error.message;
+    } else {
+        showTemporaryMessage("Registration successful! You are now logged in.", "success");
+        // session change listener will handle UI update
+    }
+};
+
+const handleLogin = async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('loginEmailInput').value.trim();
+    const password = document.getElementById('loginPasscodeInput').value;
+    const errorEl = document.getElementById('loginError');
+    const errorMsg = document.getElementById('loginErrorMessage');
+    const btn = document.getElementById('loginSubmitBtn');
+
+    btn.disabled = true;
+    errorEl.classList.add('hidden');
+
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: email,
+        password: password,
+    });
+
+    btn.disabled = false;
+
+    if (error) {
+        errorEl.classList.remove('hidden');
+        errorMsg.textContent = "Invalid email or password.";
+    } else {
+        showTemporaryMessage("Welcome back! Dashboard unlocked.", "success");
+        // session change listener will handle UI update
+    }
+};
+
+const handleLogout = async () => {
+    await supabaseClient.auth.signOut();
+    
+    // Clear state
+    state = { bankBalance: 0, cashBalance: 0, incomes: [], expenses: [], lent: [], borrowed: [] };
+    
+    // Clear inputs
+    const loginInput = document.getElementById('loginPasscodeInput');
+    if (loginInput) loginInput.value = '';
+    const loginEmail = document.getElementById('loginEmailInput');
+    if (loginEmail) loginEmail.value = '';
+    
+    showTemporaryMessage("Logged out successfully.", "success");
+};
+
+const toggleAuthForms = (showLogin) => {
     const setupForm = document.getElementById('setupForm');
     const loginForm = document.getElementById('loginForm');
     const authTitle = document.getElementById('authTitle');
     const authSubTitle = document.getElementById('authSubTitle');
     const authIcon = document.getElementById('authIcon');
-
-    if (authStatus === 'true' && hasPasscode) {
-        authContainer.classList.add('hidden');
-        dashboardContainer.classList.remove('hidden');
-        return true;
-    } else {
-        authContainer.classList.remove('hidden');
-        dashboardContainer.classList.add('hidden');
-
-        if (!hasPasscode) {
-            setupForm.classList.remove('hidden');
-            loginForm.classList.add('hidden');
-            authTitle.textContent = "Secure Your Dashboard";
-            authSubTitle.textContent = "Create a custom passcode to protect your financial logs.";
-            authIcon.className = "ph-lock-key-open text-4xl text-teal-400 animate-pulse";
-        } else {
-            setupForm.classList.add('hidden');
-            loginForm.classList.remove('hidden');
-            authTitle.textContent = "Access Secured";
-            authSubTitle.textContent = "Enter your custom passcode to unlock the dashboard.";
-            authIcon.className = "ph-shield-check text-4xl text-yellow-300";
-        }
-        return false;
-    }
-};
-
-const handleSetupSubmit = (e) => {
-    e.preventDefault();
-    const name = document.getElementById('setupNameInput').value.trim();
-    const passcode = document.getElementById('setupPasscodeInput').value;
-    const confirm = document.getElementById('confirmPasscodeInput').value;
-    const errorEl = document.getElementById('setupError');
-    const errorMsg = document.getElementById('setupErrorMessage');
-
-    if (!name) {
-        errorEl.classList.remove('hidden');
-        errorMsg.textContent = "Please enter your name.";
-        return;
-    }
-
-    if (passcode.length < 4) {
-        errorEl.classList.remove('hidden');
-        errorMsg.textContent = "Passcode must be at least 4 characters long.";
-        return;
-    }
-
-    if (passcode !== confirm) {
-        errorEl.classList.remove('hidden');
-        errorMsg.textContent = "Passcodes do not match. Please try again.";
-        return;
-    }
-
-    errorEl.classList.add('hidden');
-    const hash = simpleHash(passcode);
-    localStorage.setItem(PASSCODE_KEY, hash);
-    localStorage.setItem(USER_NAME_KEY, name);
-    localStorage.setItem(AUTH_KEY, 'true');
-    
-    // Clear setup fields
-    document.getElementById('setupNameInput').value = '';
-    document.getElementById('setupPasscodeInput').value = '';
-    document.getElementById('confirmPasscodeInput').value = '';
-    
-    checkAuth();
-    initDashboard();
-    showTemporaryMessage(`Welcome, ${name}! Dashboard unlocked.`, "success");
-};
-
-const handleLoginSubmit = (e) => {
-    e.preventDefault();
-    const passcode = document.getElementById('loginPasscodeInput').value;
-    const errorEl = document.getElementById('loginError');
-    const errorMsg = document.getElementById('loginErrorMessage');
-    
-    const storedHash = getStoredPasscodeHash();
-    if (simpleHash(passcode) === storedHash) {
-        localStorage.setItem(AUTH_KEY, 'true');
-        errorEl.classList.add('hidden');
-        
-        // Clear login field
-        document.getElementById('loginPasscodeInput').value = '';
-        
-        checkAuth();
-        initDashboard();
-        showTemporaryMessage("Welcome back! Dashboard unlocked.", "success");
-    } else {
-        errorEl.classList.remove('hidden');
-        errorMsg.textContent = "Incorrect passcode. Please try again.";
-    }
-};
-
-const handleLogout = () => {
-    localStorage.removeItem(AUTH_KEY);
-    
-    // Clear input fields
-    const loginInput = document.getElementById('loginPasscodeInput');
-    if (loginInput) loginInput.value = '';
-    
+    const setupError = document.getElementById('setupError');
     const loginError = document.getElementById('loginError');
-    if (loginError) loginError.classList.add('hidden');
-    
-    checkAuth();
-    showTemporaryMessage("Logged out successfully.", "success");
-};
 
-const handleResetAuth = () => {
-    if (confirm("Are you sure you want to reset your credentials? This will clear your passcode and registered name so you can set them up again. Your financial logs and transaction history will remain safe.")) {
-        localStorage.removeItem(PASSCODE_KEY);
-        localStorage.removeItem(AUTH_KEY);
-        localStorage.removeItem(USER_NAME_KEY);
-        checkAuth();
-        showTemporaryMessage("Credentials cleared. Please register a new name and passcode.", "success");
+    setupError.classList.add('hidden');
+    loginError.classList.add('hidden');
+
+    if (showLogin) {
+        setupForm.classList.add('hidden');
+        loginForm.classList.remove('hidden');
+        authTitle.textContent = "Access Secured";
+        authSubTitle.textContent = "Log in to your dashboard.";
+        authIcon.className = "ph-shield-check text-4xl text-yellow-300";
+    } else {
+        setupForm.classList.remove('hidden');
+        loginForm.classList.add('hidden');
+        authTitle.textContent = "Create Account";
+        authSubTitle.textContent = "Sign up for a secure finance dashboard.";
+        authIcon.className = "ph-user-plus text-4xl text-teal-400 animate-pulse";
     }
 };
 
 // --- Initialization ---
-const init = () => {
+const init = async () => {
     // Add auth event listeners
-    document.getElementById('setupForm').addEventListener('submit', handleSetupSubmit);
-    document.getElementById('loginForm').addEventListener('submit', handleLoginSubmit);
+    document.getElementById('setupForm').addEventListener('submit', handleSignUp);
+    document.getElementById('loginForm').addEventListener('submit', handleLogin);
     document.getElementById('logoutBtn').addEventListener('click', handleLogout);
-    document.getElementById('resetAuthBtn').addEventListener('click', handleResetAuth);
+    
+    document.getElementById('switchToSignupBtn').addEventListener('click', () => toggleAuthForms(false));
+    document.getElementById('switchToLoginBtn').addEventListener('click', () => toggleAuthForms(true));
 
-    // Check auth status first
-    const authenticated = checkAuth();
-    if (authenticated) {
-        initDashboard();
+    // Avatar dropdown toggle
+    const avatarBtn = document.getElementById('userAvatarBtn');
+    const dropdownMenu = document.getElementById('userDropdownMenu');
+    if (avatarBtn && dropdownMenu) {
+        avatarBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdownMenu.classList.toggle('hidden');
+        });
+        // Close when clicking anywhere else
+        document.addEventListener('click', () => {
+            dropdownMenu.classList.add('hidden');
+        });
     }
+
+    if (!supabaseClient) {
+        document.getElementById('authSubTitle').innerHTML = '<span class="text-rose-400 font-bold">Error: Supabase failed to load. Please disable your adblocker and refresh.</span>';
+        return;
+    }
+
+    // Force show login form immediately as a fallback so it's never completely blank
+    document.getElementById('loginForm').classList.remove('hidden');
+
+    try {
+        // Get initial session so the forms show up correctly
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        updateUIForAuthState(session);
+    } catch (e) {
+        console.error("Error fetching session:", e);
+        updateUIForAuthState(null);
+    }
+
+    // Listen to Supabase Auth state changes
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+        updateUIForAuthState(session);
+    });
 };
 
-const initDashboard = () => {
-    loadState();
+const initDashboard = async () => {
+    // Load state from Supabase
+    await loadState();
     
-    // Set personalized welcome message
-    const userName = localStorage.getItem(USER_NAME_KEY) || 'User';
-    document.getElementById('welcomeName').textContent = userName;
+    // Set personalized welcome message using stored username
+    const displayName = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
+    document.getElementById('welcomeName').textContent = displayName;
     
     // Set current date on date inputs
     const today = new Date().toISOString().split('T')[0];
@@ -1130,10 +1208,7 @@ const initDashboard = () => {
     document.getElementById('expenseDate').value = today;
     document.getElementById('debtDate').value = today;
 
-    // Initialize select category to the first non-disabled option
     const expenseCategorySelect = document.getElementById('expenseCategory');
-    // We now have 'Food & Drink' (index 1) and 'Grocery' (index 2) after the disabled option (index 0).
-    // Let's set the default selection to the first actual category, 'Food & Drink'.
     if (expenseCategorySelect.options.length > 1) {
         expenseCategorySelect.selectedIndex = 1; 
     }
